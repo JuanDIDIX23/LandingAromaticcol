@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useInView, AnimatePresence } from "framer-motion";
+import { motion, useInView, AnimatePresence, useScroll, useTransform, useSpring } from "framer-motion";
 import {
   Wind, Leaf, Sparkles, Heart, MapPin, Camera,
   MessageCircle, Menu, X, ArrowRight, Music2, Droplets, Star,
@@ -84,6 +84,79 @@ function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
     return () => clearInterval(t);
   }, [inView, target]);
   return <span ref={ref}>{n.toLocaleString()}{suffix}</span>;
+}
+
+// ─── Scroll Progress Bar ──────────────────────────────────────────────────────
+function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const scaleX = useSpring(scrollYProgress, { stiffness: 200, damping: 40 });
+  return (
+    <motion.div style={{
+      position: "fixed", top: 0, left: 0, right: 0, height: 3, zIndex: 200,
+      background: `linear-gradient(90deg, ${c.terracotta}, ${c.gold}, ${c.goldLight})`,
+      scaleX, transformOrigin: "0%",
+    }} />
+  );
+}
+
+// ─── Floating Ambient Orb ─────────────────────────────────────────────────────
+function FloatingOrb({ size, x, y, delay, color }: { size: number; x: string; y: string; delay: number; color: string }) {
+  return (
+    <motion.div style={{
+      position: "absolute", width: size, height: size, borderRadius: "50%",
+      left: x, top: y, background: color, filter: "blur(72px)", pointerEvents: "none", zIndex: 0,
+    }}
+      animate={{ x: [0, 40, -25, 0], y: [0, -50, 30, 0], scale: [1, 1.25, 0.85, 1], opacity: [0.18, 0.35, 0.18] }}
+      transition={{ duration: 14 + delay * 4, delay, repeat: Infinity, ease: "easeInOut" }}
+    />
+  );
+}
+
+// ─── 3D Tilt Card ─────────────────────────────────────────────────────────────
+function TiltCard({ children, style, className }: { children: React.ReactNode; style?: React.CSSProperties; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0, shine: { x: 50, y: 50 } });
+  const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!ref.current) return;
+    const r = ref.current.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width - 0.5;
+    const y = (e.clientY - r.top) / r.height - 0.5;
+    setTilt({ x: y * -14, y: x * 14, shine: { x: (x + 0.5) * 100, y: (y + 0.5) * 100 } });
+  };
+  const handleLeave = () => setTilt({ x: 0, y: 0, shine: { x: 50, y: 50 } });
+  return (
+    <motion.div ref={ref} style={{ ...style, transformStyle: "preserve-3d", position: "relative", overflow: "hidden" }}
+      className={className}
+      animate={{ rotateX: tilt.x, rotateY: tilt.y }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      onMouseMove={handleMove} onMouseLeave={handleLeave}
+      whileHover={{ scale: 1.025 }}
+    >
+      {children}
+      <div style={{
+        position: "absolute", inset: 0, borderRadius: "inherit", pointerEvents: "none",
+        background: `radial-gradient(circle at ${tilt.shine.x}% ${tilt.shine.y}%, rgba(255,255,255,0.10) 0%, transparent 60%)`,
+        transition: "background 0.15s",
+      }} />
+    </motion.div>
+  );
+}
+
+// ─── Slide In from side ───────────────────────────────────────────────────────
+function SlideIn({ children, from = "left", delay = 0, style }: {
+  children: React.ReactNode; from?: "left" | "right"; delay?: number; style?: React.CSSProperties;
+}) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  return (
+    <motion.div ref={ref} style={style}
+      initial={{ opacity: 0, x: from === "left" ? -60 : 60 }}
+      animate={inView ? { opacity: 1, x: 0 } : {}}
+      transition={{ duration: 0.7, delay, ease: [0.22, 1, 0.36, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
 }
 
 function Vapor({ delay, x, size }: { delay: number; x: number; size: number }) {
@@ -232,7 +305,7 @@ function HeroSlideshow({ images }: { images: { id: string; url: string; nombre: 
       <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(26,46,28,0.25) 0%, transparent 40%)", pointerEvents: "none" }} />
 
       {/* Floating stat badge */}
-      <motion.div style={{ position: "absolute", top: 22, left: 22, display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderRadius: 18, background: "rgba(30,29,27,0.78)", backdropFilter: "blur(18px)", border: "1px solid rgba(200,187,168,0.18)", boxShadow: "0 8px 32px rgba(0,0,0,0.28)" }}
+      <motion.div className="hero-badge-left" style={{ position: "absolute", top: 22, left: 22, display: "flex", alignItems: "center", gap: 10, padding: "11px 16px", borderRadius: 18, background: "rgba(30,29,27,0.78)", backdropFilter: "blur(18px)", border: "1px solid rgba(200,187,168,0.18)", boxShadow: "0 8px 32px rgba(0,0,0,0.28)" }}
         animate={{ y: [0, -7, 0] }} transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}>
         <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(184,151,106,0.20)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Star size={13} style={{ color: c.gold }} fill={c.gold} />
@@ -268,69 +341,85 @@ function Hero() {
   const { items: galeriaItems } = useGaleria();
   const heroImages = galeriaItems.slice(0, 8);
   const hasImages  = heroImages.length > 0;
+  const { scrollY } = useScroll();
+  const blobY1 = useTransform(scrollY, [0, 700], [0, -140]);
+  const blobY2 = useTransform(scrollY, [0, 700], [0, -70]);
+  const heroContentY = useTransform(scrollY, [0, 500], [0, -60]);
+  const heroOpacity  = useTransform(scrollY, [0, 450], [1, 0]);
+
+  const words = ["Transforma", "tu espacio"];
 
   return (
     <section id="inicio" style={{ minHeight: "100vh", display: "flex", alignItems: "center", position: "relative", overflow: "hidden", background: "linear-gradient(160deg, #1a2e1c 0%, #263d29 45%, #1e2d20 100%)" }}>
-      <div style={{ position: "absolute", top: 0, right: 0, width: 560, height: 560, borderRadius: "50%", pointerEvents: "none", background: "radial-gradient(circle, rgba(74,94,64,0.25) 0%, transparent 70%)", transform: "translate(30%,-30%)" }} />
-      <div style={{ position: "absolute", bottom: 0, left: 0, width: 380, height: 380, borderRadius: "50%", pointerEvents: "none", background: "radial-gradient(circle, rgba(181,97,74,0.12) 0%, transparent 70%)", transform: "translate(-30%,30%)" }} />
+      <motion.div style={{ position: "absolute", top: 0, right: 0, width: 560, height: 560, borderRadius: "50%", pointerEvents: "none", background: "radial-gradient(circle, rgba(74,94,64,0.25) 0%, transparent 70%)", transform: "translate(30%,-30%)", y: blobY1 }} />
+      <motion.div style={{ position: "absolute", bottom: 0, left: 0, width: 380, height: 380, borderRadius: "50%", pointerEvents: "none", background: "radial-gradient(circle, rgba(181,97,74,0.12) 0%, transparent 70%)", transform: "translate(-30%,30%)", y: blobY2 }} />
+      <FloatingOrb size={320} x="20%" y="30%" delay={0}   color="rgba(74,94,64,0.12)" />
+      <FloatingOrb size={200} x="70%" y="60%" delay={3}   color="rgba(184,151,106,0.08)" />
+      <FloatingOrb size={160} x="50%" y="10%" delay={6}   color="rgba(181,97,74,0.07)" />
 
-      <div className="wrap" style={{ paddingTop: 96, paddingBottom: 64, display: "grid", gap: 56, alignItems: "center", width: "100%", gridTemplateColumns: "1fr" }}>
+      <motion.div className="hero-grid" style={{ y: heroContentY, opacity: heroOpacity }}>
         {/* ── Texto ── */}
-        <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }} style={{ maxWidth: 540 }} className="hero-left">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.6 }}
+        <div style={{ maxWidth: 540 }} className="hero-left">
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.6 }}
             style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: 999, marginBottom: 28, fontSize: 13, fontWeight: 600, background: "rgba(107,124,94,0.18)", color: c.goldLight, border: "1px solid rgba(184,151,106,0.30)" }}>
             <Sparkles size={13} /> Aromaterapia de calidad premium
           </motion.div>
 
-          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "clamp(2.8rem, 6vw, 5.2rem)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 24, color: c.linen }}>
-            Transforma<br />tu espacio<br />
-            <span style={{ color: c.goldLight }}>con aroma</span>
-            <span style={{ color: c.terracotta }}>terapia ✨</span>
+          <h1 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "clamp(2.8rem, 6vw, 5.2rem)", fontWeight: 600, lineHeight: 1.05, letterSpacing: "-0.02em", marginBottom: 24, color: c.linen, overflow: "hidden" }}>
+            {words.map((word, i) => (
+              <motion.span key={word} style={{ display: "block" }}
+                initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.75, delay: 0.15 + i * 0.12, ease: [0.22, 1, 0.36, 1] }}>
+                {word}
+              </motion.span>
+            ))}
+            <motion.span style={{ display: "block" }}
+              initial={{ opacity: 0, y: 60 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.39, ease: [0.22, 1, 0.36, 1] }}>
+              <span style={{ color: c.goldLight }}>con aroma</span>
+              <span style={{ color: c.terracotta }}>terapia ✨</span>
+            </motion.span>
           </h1>
 
-          <p style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 40, color: "rgba(232,226,217,0.68)", fontWeight: 300, maxWidth: 440 }}>
+          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55, duration: 0.65 }}
+            style={{ fontSize: 17, lineHeight: 1.7, marginBottom: 40, color: "rgba(232,226,217,0.68)", fontWeight: 300, maxWidth: 440 }}>
             Humidificadores y difusores aesthetic diseñados para crear ambientes relajantes y elegantes en tu hogar.
-          </p>
+          </motion.p>
 
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
-            <button onClick={() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" })}
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "14px 30px", borderRadius: 12, fontWeight: 600, fontSize: 15, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.terracotta}, #a85542)`, color: c.linen, boxShadow: "0 8px 28px rgba(181,97,74,0.40)", transition: "transform 0.2s, box-shadow 0.2s" }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.04)"; e.currentTarget.style.boxShadow = "0 14px 40px rgba(181,97,74,0.50)"; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 8px 28px rgba(181,97,74,0.40)"; }}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7, duration: 0.6 }}
+            style={{ display: "flex", gap: 14, flexWrap: "wrap", marginBottom: 48 }}>
+            <motion.button onClick={() => document.getElementById("productos")?.scrollIntoView({ behavior: "smooth" })}
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "14px 30px", borderRadius: 12, fontWeight: 600, fontSize: 15, border: "none", cursor: "pointer", background: `linear-gradient(135deg, ${c.terracotta}, #a85542)`, color: c.linen, boxShadow: "0 8px 28px rgba(181,97,74,0.40)" }}
+              whileHover={{ scale: 1.05, boxShadow: "0 16px 44px rgba(181,97,74,0.55)" }}
+              whileTap={{ scale: 0.97 }}>
               Ver productos <ArrowRight size={16} />
-            </button>
-            <a href="https://wa.me/573001234567" target="_blank" rel="noreferrer"
-              style={{ display: "flex", alignItems: "center", gap: 7, padding: "14px 30px", borderRadius: 12, fontWeight: 600, fontSize: 15, textDecoration: "none", border: "2px solid rgba(200,187,168,0.30)", color: c.linen, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(8px)", transition: "border-color 0.2s, transform 0.2s" }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(200,187,168,0.60)"; e.currentTarget.style.transform = "scale(1.03)"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(200,187,168,0.30)"; e.currentTarget.style.transform = "scale(1)"; }}>
+            </motion.button>
+            <motion.a href="https://wa.me/573001234567" target="_blank" rel="noreferrer"
+              style={{ display: "flex", alignItems: "center", gap: 7, padding: "14px 30px", borderRadius: 12, fontWeight: 600, fontSize: 15, textDecoration: "none", border: "2px solid rgba(200,187,168,0.30)", color: c.linen, background: "rgba(255,255,255,0.05)", backdropFilter: "blur(8px)" }}
+              whileHover={{ scale: 1.04, borderColor: "rgba(200,187,168,0.65)" }}
+              whileTap={{ scale: 0.97 }}>
               <MessageCircle size={15} /> WhatsApp
-            </a>
-          </div>
+            </motion.a>
+          </motion.div>
 
           {/* Mini stats row */}
-          <div style={{ display: "flex", gap: 28, paddingTop: 28, borderTop: "1px solid rgba(200,187,168,0.12)" }}>
-            {[{ v: "1,200+", l: "Clientes" }, { v: "8", l: "Ciudades" }, { v: "4.9★", l: "Calificación" }].map(s => (
-              <div key={s.l}>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9, duration: 0.8 }}
+            className="hero-stats">
+            {[{ v: "1,200+", l: "Clientes" }, { v: "8", l: "Ciudades" }, { v: "4.9★", l: "Calificación" }].map((s, i) => (
+              <motion.div key={s.l} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 + i * 0.1 }}>
                 <p style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 22, fontWeight: 600, color: c.goldLight, lineHeight: 1 }}>{s.v}</p>
                 <p style={{ fontSize: 11, color: "rgba(232,226,217,0.45)", marginTop: 4 }}>{s.l}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
-        </motion.div>
+          </motion.div>
+        </div>
 
         {/* ── Visual (slideshow o device) ── */}
-        <motion.div initial={{ opacity: 0, scale: 0.93 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 1, delay: 0.2, ease: [0.22, 1, 0.36, 1] }} className="hero-right">
+        <motion.div initial={{ opacity: 0, scale: 0.93, x: 40 }} animate={{ opacity: 1, scale: 1, x: 0 }} transition={{ duration: 1.1, delay: 0.25, ease: [0.22, 1, 0.36, 1] }} className="hero-right">
           {hasImages ? <HeroSlideshow images={heroImages} /> : <HeroDevice />}
         </motion.div>
-      </div>
+      </motion.div>
 
-      <style>{`
-        @media (min-width: 900px) {
-          .hero-left { max-width: 100% !important; }
-          div.wrap > .hero-left, div.wrap > .hero-right { grid-column: auto; }
-          div.wrap { grid-template-columns: 1fr 1fr !important; }
-        }
-      `}</style>
     </section>
   );
 }
@@ -348,16 +437,16 @@ function Benefits() {
         </FadeUp>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20 }}>
           {BENEFITS.map((b, i) => (
-            <FadeUp key={b.title} delay={i * 0.1}>
-              <motion.div style={{ borderRadius: 24, padding: 28, height: "100%", cursor: "default", background: "rgba(200,187,168,0.22)", border: "1px solid rgba(200,187,168,0.45)" }}
-                whileHover={{ y: -6, boxShadow: "0 20px 48px rgba(42,40,34,0.10)" }} transition={{ duration: 0.3 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, background: b.bg }}>
+            <SlideIn key={b.title} from={i % 2 === 0 ? "left" : "right"} delay={i * 0.1}>
+              <TiltCard style={{ borderRadius: 24, padding: 28, height: "100%", cursor: "default", background: "rgba(200,187,168,0.22)", border: "1px solid rgba(200,187,168,0.45)", boxShadow: "0 4px 24px rgba(42,40,34,0.04)" }}>
+                <motion.div style={{ width: 46, height: 46, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18, background: b.bg }}
+                  whileHover={{ rotate: [0, -10, 10, 0], scale: 1.1 }} transition={{ duration: 0.5 }}>
                   <b.icon size={21} style={{ color: b.color }} />
-                </div>
+                </motion.div>
                 <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 17, fontWeight: 600, marginBottom: 8, color: "#2a2822" }}>{b.title}</h3>
                 <p style={{ fontSize: 13, lineHeight: 1.6, color: c.walnut, fontWeight: 300 }}>{b.desc}</p>
-              </motion.div>
-            </FadeUp>
+              </TiltCard>
+            </SlideIn>
           ))}
         </div>
       </div>
@@ -438,8 +527,7 @@ function Products() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
           {items.map((prod, i) => (
             <FadeUp key={prod.key} delay={i * 0.12}>
-              <motion.div style={{ borderRadius: 24, overflow: "hidden", background: c.linen, border: "1px solid rgba(200,187,168,0.5)", boxShadow: "0 4px 24px rgba(42,40,34,0.06)" }}
-                whileHover={{ y: -8, boxShadow: "0 24px 56px rgba(42,40,34,0.13)" }} transition={{ duration: 0.35 }}>
+              <TiltCard style={{ borderRadius: 24, overflow: "hidden", background: c.linen, border: "1px solid rgba(200,187,168,0.5)", boxShadow: "0 4px 24px rgba(42,40,34,0.06)" }}>
                 <div style={{ padding: prod.img ? 0 : 14 }}>
                   {prod.img
                     ? <img src={prod.img} alt={prod.titulo} style={{ width: "100%", height: 200, objectFit: "cover" }} />
@@ -460,7 +548,7 @@ function Products() {
                     Consultar por WhatsApp <ArrowRight size={14} />
                   </a>
                 </div>
-              </motion.div>
+              </TiltCard>
             </FadeUp>
           ))}
         </div>
@@ -477,6 +565,8 @@ function FeriasSection() {
   return (
     <section id="ferias" style={{ padding: "96px 0", background: `linear-gradient(180deg, ${c.forest} 0%, #1e2d20 100%)`, position: "relative", overflow: "hidden" }}>
       <div style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 680, height: 320, borderRadius: "50%", background: "radial-gradient(ellipse, rgba(74,94,64,0.20) 0%, transparent 70%)", pointerEvents: "none" }} />
+      <FloatingOrb size={280} x="10%" y="20%" delay={1}  color="rgba(74,94,64,0.15)" />
+      <FloatingOrb size={200} x="75%" y="50%" delay={4}  color="rgba(184,151,106,0.10)" />
       <div className="wrap" style={{ position: "relative" }}>
         <FadeUp className="text-center" style={{ marginBottom: 56 }}>
           <p style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.14em", textTransform: "uppercase", color: c.goldLight, marginBottom: 10 }}>Encuéntranos</p>
@@ -540,7 +630,7 @@ function Stats() {
             Miles de personas ya<br /><span style={{ color: c.goldLight }}>respiran bienestar</span>
           </h2>
         </FadeUp>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 24 }}>
+        <div className="stats-grid">
           {STATS.map((s, i) => (
             <FadeUp key={s.label} delay={i * 0.15} className="text-center">
               <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "clamp(2rem, 5vw, 3.5rem)", fontWeight: 600, letterSpacing: "-0.01em", color: c.goldLight, marginBottom: 6 }}>
@@ -575,7 +665,7 @@ function GaleriaSection() {
             {[1,2,3,4,5,6].map(i => <div key={i} style={{ borderRadius: 16, background: "rgba(200,187,168,0.22)", aspectRatio: "4/3", animation: "pulse 1.5s infinite" }} />)}
           </div>
         ) : (
-          <div style={{ columns: "3 220px", gap: 14 }}>
+          <div className="gallery-masonry" style={{ gap: 14 }}>
             {items.map((img, i) => (
               <FadeUp key={img.id} delay={i * 0.05} style={{ breakInside: "avoid", marginBottom: 14, display: "block" }}>
                 <motion.div style={{ borderRadius: 16, overflow: "hidden", border: "1px solid rgba(200,187,168,0.4)" }}
@@ -649,7 +739,7 @@ function Footer() {
   return (
     <footer style={{ padding: "48px 0", background: c.charcoal, borderTop: "1px solid rgba(200,187,168,0.08)" }}>
       <div className="wrap">
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: 24, marginBottom: 36 }}>
+        <div className="footer-main">
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: `linear-gradient(135deg, ${c.olive}, ${c.moss})` }}>
               <Leaf size={15} color="#e8e2d9" />
@@ -680,7 +770,7 @@ function Footer() {
             >TK</a>
           </div>
         </div>
-        <div style={{ paddingTop: 28, display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 8, fontSize: 12, color: c.linen, opacity: 0.32, borderTop: "1px solid rgba(242,237,230,0.06)" }}>
+        <div className="footer-bottom" style={{ color: c.linen, opacity: 0.32 }}>
           <p>© {new Date().getFullYear()} Aromaticcol. Todos los derechos reservados.</p>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <p>Hecho con amor para tu bienestar ✨</p>
@@ -700,6 +790,7 @@ function Footer() {
 export function LandingPage() {
   return (
     <div style={{ background: c.parchment, minHeight: "100vh", width: "100%" }}>
+      <ScrollProgress />
       <Navbar />
       <Hero />
       <Benefits />
