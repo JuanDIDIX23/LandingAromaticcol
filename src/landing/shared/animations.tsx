@@ -55,7 +55,7 @@ export function RevealText({ children, delay = 0, style }: { children: React.Rea
 // ─── StaggerGrid — envuelve hijos con stagger automático ──────────────────────
 export const itemVariant = {
   hidden:  { opacity: 0, y: 32, scale: 0.97 },
-  visible: { opacity: 1, y: 0,  scale: 1,   transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, y: 0,  scale: 1,   transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 export function StaggerGrid({ children, stagger = 0.1, delay = 0, className = "", style }: {
@@ -156,8 +156,8 @@ export function SectionLabel({ text, color, delay = 0 }: { text: string; color: 
 }
 
 // ─── Carousel ─────────────────────────────────────────────────────────────────
-export function Carousel({ children, cardWidth = 300, gap = 24, dark = false }: {
-  children: React.ReactNode[]; cardWidth?: number; gap?: number; dark?: boolean;
+export function Carousel({ children, cardWidth = 300, gap = 24 }: {
+  children: React.ReactNode[]; cardWidth?: number; gap?: number;
 }) {
   const [idx, setIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
