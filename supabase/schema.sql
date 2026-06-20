@@ -94,13 +94,17 @@ CREATE TABLE IF NOT EXISTS config_general (
 );
 
 INSERT INTO config_general (clave, valor, tipo) VALUES
-  ('whatsapp_numero',   '573001234567',                                     'text'),
-  ('whatsapp_mensaje',  'Hola, me interesa conocer más sobre sus productos', 'text'),
-  ('instagram_url',     'https://instagram.com/aromaticcol',                 'url'),
-  ('tiktok_url',        'https://tiktok.com/@aromaticcol',                   'url'),
-  ('email_contacto',    'contacto@aromaticcol.com',                          'text'),
-  ('direccion',         'Bogotá, Colombia',                                  'text'),
-  ('horario_atencion',  'Lun – Dom 9am – 8pm',                               'text')
+  ('whatsapp_numero',      '573001234567',                                     'text'),
+  ('whatsapp_mensaje',     'Hola, me interesa conocer más sobre sus productos', 'text'),
+  ('instagram_url',        'https://instagram.com/aromaticcol',                 'url'),
+  ('tiktok_url',           'https://tiktok.com/@aromaticcol',                   'url'),
+  ('email_contacto',       'contacto@aromaticcol.com',                          'text'),
+  ('direccion',            'Bogotá, Colombia',                                  'text'),
+  ('horario_atencion',     'Lun – Dom 9am – 8pm',                               'text'),
+  ('cob_stat_tiempo',      '24 – 48h',                                          'text'),
+  ('cob_stat_pedidos',     '+3,500',                                             'text'),
+  ('cob_stat_ciudades',    '4 ciudades',                                         'text'),
+  ('cob_stat_crecimiento', 'x2.4',                                               'text')
 ON CONFLICT (clave) DO NOTHING;
 
 -- ============================================================

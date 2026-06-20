@@ -34,11 +34,14 @@ export function useConfig() {
     if (!isSupabaseConfigured) return { error: 'Supabase no configurado' };
     const { error: err } = await supabase
       .from('config_general')
-      .update({ valor })
-      .eq('clave', clave);
+      .upsert({ clave, valor }, { onConflict: 'clave' });
     if (!err) {
       setConfig(prev => ({ ...prev, [clave]: valor }));
-      setItems(prev => prev.map(i => i.clave === clave ? { ...i, valor } : i));
+      setItems(prev => {
+        const exists = prev.some(i => i.clave === clave);
+        if (exists) return prev.map(i => i.clave === clave ? { ...i, valor } : i);
+        return [...prev, { id: '', clave, valor, tipo: 'text' }];
+      });
     }
     return { error: err?.message ?? null };
   }, []);

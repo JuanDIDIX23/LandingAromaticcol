@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Users, MapPin, Package, FileText,
-  Image, Settings, Leaf, X,
+  Image, Settings, Leaf, X, Globe,
 } from 'lucide-react';
 
 const LINKS = [
@@ -11,6 +11,7 @@ const LINKS = [
   { to: '/admin/productos',      label: 'Productos',      icon: Package          },
   { to: '/admin/contenido',      label: 'Contenido',      icon: FileText         },
   { to: '/admin/galeria',        label: 'Galería',        icon: Image            },
+  { to: '/admin/cobertura',      label: 'Cobertura',      icon: Globe            },
   { to: '/admin/configuracion',  label: 'Configuración',  icon: Settings         },
 ];
 

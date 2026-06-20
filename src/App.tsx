@@ -10,6 +10,7 @@ import { ProductosPage }      from './admin/pages/ProductosPage';
 import { ContenidoPage }      from './admin/pages/ContenidoPage';
 import { GaleriaPage }        from './admin/pages/GaleriaPage';
 import { ConfiguracionPage }  from './admin/pages/ConfiguracionPage';
+import { CoberturaPage }      from './admin/pages/CoberturaPage';
 
 export default function App() {
   return (
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="contenido"    element={<ContenidoPage />} />
             <Route path="galeria"      element={<GaleriaPage />} />
             <Route path="configuracion" element={<ConfiguracionPage />} />
+            <Route path="cobertura"     element={<CoberturaPage />} />
           </Route>
         </Route>
 

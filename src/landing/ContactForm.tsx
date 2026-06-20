@@ -23,18 +23,6 @@ const PRODUCTOS_LISTA = [
   'No lo sé aún',
 ];
 
-// ── Estilos alineados con la paleta de la landing ──────────────
-const c = {
-  linen:      '#e8e2d9',
-  parchment:  '#f2ede6',
-  walnut:     '#5a3e2b',
-  taupe:      '#9e8e7e',
-  sand:       '#c8bba8',
-  olive:      '#4a5e40',
-  terracotta: '#b5614a',
-  goldLight:  '#d4b88a',
-};
-
 interface ContactFormProps {
   feriaOrigen?: string;
 }
@@ -73,12 +61,12 @@ export function ContactForm({ feriaOrigen }: ContactFormProps) {
         style={{ textAlign: 'center', padding: '48px 24px' }}
       >
         <motion.div animate={{ scale: [0.8, 1.1, 1] }} transition={{ duration: 0.5 }}>
-          <CheckCircle size={56} color={c.goldLight} style={{ margin: '0 auto 16px' }} />
+          <CheckCircle size={56} color="#C98B5C" style={{ margin: '0 auto 16px' }} />
         </motion.div>
-        <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '1.8rem', fontWeight: 600, color: c.linen, marginBottom: 10 }}>
+        <h3 style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: '1.8rem', fontWeight: 600, color: '#5C4B3A', marginBottom: 10 }}>
           ¡Gracias!
         </h3>
-        <p style={{ fontSize: 15, color: 'rgba(232,226,217,0.70)', maxWidth: 340, margin: '0 auto' }}>
+        <p style={{ fontSize: 15, color: 'rgba(92,75,58,0.70)', maxWidth: 340, margin: '0 auto' }}>
           Recibimos tu mensaje. Te contactaremos pronto para ayudarte con tu experiencia de bienestar.
         </p>
       </motion.div>
@@ -132,9 +120,9 @@ export function ContactForm({ feriaOrigen }: ContactFormProps) {
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           width: '100%', padding: '14px', borderRadius: 12, fontSize: 15, fontWeight: 600,
           border: 'none', cursor: isSubmitting ? 'wait' : 'pointer',
-          background: isSubmitting ? 'rgba(181,97,74,0.5)' : `linear-gradient(135deg, ${c.terracotta}, #a85542)`,
-          color: c.linen,
-          boxShadow: '0 8px 24px rgba(181,97,74,0.35)',
+          background: isSubmitting ? 'rgba(201,139,92,0.50)' : 'linear-gradient(135deg, #C98B5C, #B97A4E)',
+          color: '#FFF8F1',
+          boxShadow: '0 8px 24px rgba(201,139,92,0.30)',
         }}
         whileHover={{ scale: isSubmitting ? 1 : 1.02 }}
         whileTap={{ scale: 0.98 }}
@@ -152,13 +140,13 @@ export function ContactForm({ feriaOrigen }: ContactFormProps) {
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 12, fontWeight: 600, letterSpacing: '0.06em',
-  textTransform: 'uppercase', color: 'rgba(232,226,217,0.55)', marginBottom: 6,
+  textTransform: 'uppercase', color: 'rgba(92,75,58,0.60)', marginBottom: 6,
 };
-const errStyle: React.CSSProperties = { fontSize: 12, color: '#f87171', marginTop: 4 };
+const errStyle: React.CSSProperties = { fontSize: 12, color: '#c0392b', marginTop: 4 };
 const inputStyle = (hasErr: boolean): React.CSSProperties => ({
   width: '100%', padding: '11px 14px', borderRadius: 10, fontSize: 14,
-  border: `1px solid ${hasErr ? '#f87171' : 'rgba(200,187,168,0.25)'}`,
-  color: '#e8e2d9', background: 'rgba(255,255,255,0.07)',
+  border: `1px solid ${hasErr ? '#c0392b' : 'rgba(201,139,92,0.28)'}`,
+  color: '#5C4B3A', background: 'rgba(255,255,255,0.70)',
   outline: 'none', boxSizing: 'border-box',
   backdropFilter: 'blur(4px)',
 });

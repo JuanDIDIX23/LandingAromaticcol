@@ -18,8 +18,8 @@ body {
   width: 100%;
   min-height: 100vh;
   font-family: 'DM Sans', system-ui, sans-serif;
-  background-color: #263d29;
-  color: #2a2822;
+  background-color: #F3E6D6;
+  color: #5C4B3A;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -103,17 +103,29 @@ body {
   align-items: center;
   gap: 8px;
   font-size: 12px;
-  border-top: 1px solid rgba(242,237,230,0.06);
+  border-top: 1px solid rgba(92,75,58,0.12);
 }
 
-/* ── Gallery masonry ───────────────────────────────────────── */
-.gallery-masonry {
-  columns: 3 200px;
+/* ── Gallery dynamic grid ──────────────────────────────────── */
+.gallery-dynamic-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: 200px;
   gap: 14px;
 }
 
-@media (max-width: 480px) {
-  .gallery-masonry { columns: 2 140px; }
+@media (max-width: 900px) {
+  .gallery-dynamic-grid {
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 170px;
+  }
+}
+
+@media (max-width: 600px) {
+  .gallery-dynamic-grid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: 140px;
+  }
 }
 
 /* ── Mini stats row en hero ────────────────────────────────── */
